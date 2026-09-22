@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>偽名生成 - Gimei Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span class="accent">偽</span>名生成</h1>
+            <p>Gimei — Japanese Pseudonym Generator</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="gender">性別 / Gender</label>
+                <select id="gender">
+                    <option value="random">ランダム / Random</option>
+                    <option value="male">男性 / Male</option>
+                    <option value="female">女性 / Female</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="count">件数 / Count</label>
+                <input type="number" id="count" value="5" min="1" max="50">
+            </div>
+            <button id="generateBtn">生成する / Generate</button>
+        </div>
+
+        <div class="spinner" id="spinner">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="results" id="results">
+            <div class="results-header">
+                <h2>生成結果 / Results</h2>
+                <span class="count-badge" id="countBadge">0</span>
+            </div>
+            <div id="nameList"></div>
+        </div>
+    </div>
+
+    <script>
+    const genderEl = document.getElementById('gender');
+    const countEl = document.getElementById('count');
+    const generateBtn = document.getElementById('generateBtn');
+    const spinner = document.getElementById('spinner');
+    const error = document.getElementById('error');
+    const results = document.getElementById('results');
+    const nameList = document.getElementById('nameList');
+    const countBadge = document.getElementById('countBadge');
+
+    async function generate() {
+        error.classList.remove('visible');
+        results.classList.remove('visible');
+        spinner.classList.add('visible');
+
+        const gender = genderEl.value;
+        const count = countEl.value;
+
+        try {
+            const res = await fetch(`generate.php?gender=${gender}&count=${count}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const names = await res.json();
+
+            spinner.classList.remove('visible');
+            countBadge.textContent = names.length;
+            nameList.innerHTML = '';
+
+            names.forEach(n => {
+                const card = document.createElement('div');
+                card.className = 'name-card';
+
+                const kanjiSpan = document.createElement('div');
+                kanjiSpan.className = 'kanji';
+                kanjiSpan.textContent = n.kanji;
+
+                const readingsDiv = document.createElement('div');
+                readingsDiv.className = 'readings';
+
+                const yomiDiv = document.createElement('div');
+                yomiDiv.className = 'yomi';
+                yomiDiv.textContent = n.yomi;
+
+                const romajiDiv = document.createElement('div');
+                romajiDiv.className = 'romaji';
+                romajiDiv.textContent = n.romaji;
+
+                readingsDiv.appendChild(yomiDiv);
+                readingsDiv.appendChild(romajiDiv);
+                card.appendChild(kanjiSpan);
+                card.appendChild(readingsDiv);
+                nameList.appendChild(card);
+            });
+
+            results.classList.add('visible');
+        } catch (e) {
+            spinner.classList.remove('visible');
+            error.textContent = 'エラーが発生しました / An error occurred: ' + e.message;
+            error.classList.add('visible');
+        }
+    }
+
+    generateBtn.addEventListener('click', generate);
+
+    countEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') generate();
+    });
+
+    // ページを開いた時点で自動生成 / Auto-generate on page load
+    generate();
+    </script>
+</body>
+</html>
